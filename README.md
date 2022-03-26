@@ -1,3 +1,2 @@
-# An interpreter written in go.
-# monkey-interpreter
-# monkey-interpreter
+# An interpreter written in Golang
+
