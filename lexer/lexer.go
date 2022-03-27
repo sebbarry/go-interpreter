@@ -28,14 +28,30 @@ func (l *Lexer) readChar() {
     l.readPosition += 1                    // set next pos as next.next
 }
 
+// function to peek ahead and determine if a character is a double value ie. ==, !=, <=, etc.
+func (l *Lexer) peekChar() byte {
+    if l.readPosition >= len(l.input) {
+        return 0
+    } else {
+        return l.input[l.readPosition]
+    }
+}
+
 
 // this determines what the token is at the current index of the input value
 func (l *Lexer) NextToken() token.Token {
     var tok token.Token
     l.skipWhiteSpace()                      // skip the whitespace of the character (if it is)
-    switch l.ch {
-    case '=':
-        tok = newToken(token.ASSIGN, l.ch)
+    switch l.ch {                           // switch through the current character symbol
+    case '=':                               // determine if we have == or = 
+        if l.peekChar() == '=' {
+            ch := l.ch
+            l.readChar()
+            literal := string(ch) + string(l.ch)
+            tok = token.Token{Type: token.EQ, Literal: literal}
+        } else {
+            tok = newToken(token.ASSIGN, l.ch)
+        }
     case ';':
         tok = newToken(token.SEMICOLON, l.ch)
     case '(':
@@ -50,17 +66,36 @@ func (l *Lexer) NextToken() token.Token {
         tok = newToken(token.COMMA, l.ch)
     case '+':
         tok = newToken(token.PLUS, l.ch)
+    case '>':
+        tok = newToken(token.GT, l.ch)
+    case '<':
+        tok = newToken(token.LT, l.ch)
+    case '*':
+        tok = newToken(token.ASTERISK, l.ch)
+    case '!':                                               // peek ahead to see if !=
+        if l.peekChar() == '='{
+            ch := l.ch
+            l.readChar()
+            literal := string(ch) + string(l.ch)
+            tok = token.Token{Type: token.NOT_EQ, Literal: literal}
+        } else {
+            tok = newToken(token.BANG, l.ch)
+        }
+    case '-':
+        tok = newToken(token.MINUS, l.ch)
+    case '/':
+        tok = newToken(token.SLASH, l.ch)
     case 0:
         tok.Literal = ""
         tok.Type = token.EOF
-    default:                                // default value - reads the char. and determiens if we have a char.
+    default:                                                  // default value - reads the char. and determiens if we have a char.
         if isLetter(l.ch) {
-            tok.Literal = l.readIdentifier()          // look up the literal value
-            tok.Type = token.LookupIdent(tok.Literal) //look up the tokens type
+            tok.Literal = l.readIdentifier()                  // look up the literal value
+            tok.Type = token.LookupIdent(tok.Literal)         //look up the tokens type
             return tok
-        } else if isDigit(l.ch) {                   // check if the token is a digit value (not a character)
-            tok.Type = token.INT                    // assign type to INT
-            tok.Literal = l.readNumber()            // assign literal to the readNumber() output
+        } else if isDigit(l.ch) {                             // check if the token is a digit value (not a character)
+            tok.Type = token.INT                              // assign type to INT
+            tok.Literal = l.readNumber()                      // assign literal to the readNumber() output
             return tok
         } else {
             tok = newToken(token.ILLEGAL, l.ch)
@@ -88,7 +123,7 @@ func isDigit(ch byte) bool {
 // read the current identifier of the lexer
 func (l *Lexer) readIdentifier() string {
     position := l.position
-    for isLetter(l.ch) {
+    for isLetter(l.ch) {                    //while the current position is a character, loop through to the next value 
         l.readChar()
     }
     return l.input[position:l.position]
