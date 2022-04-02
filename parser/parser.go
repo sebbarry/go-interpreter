@@ -1,13 +1,18 @@
+
+
 package parser
 
 import (
+	"fmt"
+
 	"interpreter/ast"
 	"interpreter/lexer"
 	"interpreter/token"
 )
 
-
+// main parser struct.
 type Parser struct {
+    errors []string // maintaining a slice of errors to refer to.
     l *lexer.Lexer  // l is a pionter to an instance of a lexer (on which we repeatedly call NextToken() to get the next token in the input)
 
     //these act as the lexer does when pointing to the current and next character in the input. here they point to tokens.
@@ -15,9 +20,13 @@ type Parser struct {
     peekToken token.Token   // peekToken is a pointer.
 }
 
+
 // make a new parser
 func New(l *lexer.Lexer) *Parser {
-    p := &Parser{l: l}
+    p := &Parser{
+        l: l,
+        errors: []string{},
+    }
 
     // read the two tokens, so curtoken and peektoken are both set
     p.nextToken()
@@ -45,7 +54,6 @@ func (p *Parser) ParseProgram() *ast.Program {
             program.Statements = append(program.Statements, stmt)
         }
         p.nextToken() // loop to the next token 
-        return nil
     }
     return program
 }
@@ -58,12 +66,15 @@ func (p *Parser) parseStatement() ast.Statement {
     switch p.curToken.Type {
     case token.LET:
         return p.parseLetStatement()
+    case token.RETURN:
+        return p.parseReturnStatement()
     default:
         return nil
     }
 }
 
 
+// ************ Parser Handling Functions ************
 
 // let statement parser function
 func (p *Parser) parseLetStatement() *ast.LetStatement {
@@ -89,6 +100,22 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 }
 
 
+// we always return the node that we can add to the ast.
+func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
+    stmt := &ast.ReturnStatement{Token: p.curToken}
+
+    p.nextToken()
+
+    //TODO we are skipping the expression until we encounter a semicolon
+
+    for !p.curTokenIs(token.SEMICOLON) {
+        p.nextToken()
+    }
+    return stmt
+}
+
+
+// ************ Token Handling Functions ************
 
 func (p *Parser) curTokenIs(t token.TokenType) bool {
     return p.curToken.Type == t
@@ -103,9 +130,25 @@ func (p *Parser) peekTokenIs(t token.TokenType) bool {
 // assertion function common to parsers.
 func (p *Parser) expectPeek(t token.TokenType) bool {
     if p.peekTokenIs(t) {
-        p.nextToken()
+        p.nextToken() //loop to the next token
         return true
     } else {
+        p.peekError(t) //add the token to the error
         return false
     }
+}
+
+
+// ************ Error Handling Functions ************
+
+
+// getter method for the parser to return the errors in the errors slice
+func (p *Parser) Errors() []string {
+    return p.errors
+}
+
+//add an error to hte slice of error strings in the parser
+func (p *Parser) peekError(t token.TokenType) {
+    msg := fmt.Sprintf("expected next token tok be %s, got %s instead", t, p.peekToken.Type)
+    p.errors = append(p.errors, msg)
 }

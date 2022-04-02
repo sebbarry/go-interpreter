@@ -6,14 +6,18 @@ use to define tokens during our Lexing process.
 
 package token
 
-
+// just the string value declaration.
 type TokenType string
 
+//token struct with a TokenType and a Literal value
 type Token struct {
     Type TokenType
     Literal string
 }
 
+
+// here we can add the keywords to our language in a hashmap. const definitions defined below.
+// ie. string: TokenType -> fn: "FUNCTION"
 var keywords = map[string]TokenType {
     "fn":     FUNCTION,
     "let":    LET,
@@ -23,15 +27,6 @@ var keywords = map[string]TokenType {
     "if":     IF,
     "else":   ELSE,
 }
-
-// looks up the token to see if it is in the keywords hashmap
-func LookupIdent(ident string) TokenType {
-    if tok, ok := keywords[ident]; ok {   // if in map, return constant value
-        return tok
-    }
-    return IDENT                         // if not, return the TokenType
-}
-
 
 const (
     ILLEGAL   = "ILLEGAL"
@@ -70,3 +65,13 @@ const (
 
 
 )
+
+// looks up the token to see if it is in the keywords hashmap
+func LookupIdent(ident string) TokenType {
+    if tok, ok := keywords[ident]; ok {   // if in map, return constant value
+        return tok
+    }
+    return IDENT                         // if not, return the TokenType
+}
+
+
