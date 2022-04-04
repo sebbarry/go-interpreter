@@ -123,7 +123,7 @@ func isDigit(ch byte) bool {
 // read the current identifier of the lexer
 func (l *Lexer) readIdentifier() string {
     position := l.position
-    for isLetter(l.ch) {                    //while the current position is a character, loop through to the next value 
+    for isLetter(l.ch) {        //while the current position is a character, loop through to the next value 
         l.readChar()
     }
     return l.input[position:l.position]
