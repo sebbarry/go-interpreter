@@ -10,6 +10,11 @@ import (
 	"interpreter/token"
 )
 
+type (
+    prefixParseFn func() ast.Expression // gets called when we encounter a token in the prefix position. 
+    infixParseFn func(ast.Expression) ast.Expression // gets called when we encounter a token in the infix position 
+)
+
 // main parser struct.
 type Parser struct {
     errors []string // maintaining a slice of errors to refer to.
@@ -18,6 +23,10 @@ type Parser struct {
     //these act as the lexer does when pointing to the current and next character in the input. here they point to tokens.
     curToken token.Token    // curToken is a pointer.
     peekToken token.Token   // peekToken is a pointer.
+
+    // these maps in place we can just check if the appropriate map (infix or prefix) has a parsing functoin associated with curToken.Type
+    prefixParseFns map[token.TokenType]prefixParseFn
+    infixParseFns map[token.TokenType]infixParseFn
 }
 
 
@@ -152,3 +161,23 @@ func (p *Parser) peekError(t token.TokenType) {
     msg := fmt.Sprintf("expected next token tok be %s, got %s instead", t, p.peekToken.Type)
     p.errors = append(p.errors, msg)
 }
+
+
+// ************ Semantic Code functions ********************** 
+
+// These 'semantic parsing functions' are helper functoins to populate 
+// the infix maps or prefix maps depending on what we discover in our
+// parsing.
+// ---->
+func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+    p.prefixParseFns[tokenType] = fn
+}
+func (p *Parser) registerInfix (tokenType token.TokenType, fn infixParseFn) {
+    p.infixParseFns[tokenType] = fn
+}
+// <----
+
+
+
+
+

@@ -7,6 +7,7 @@ import (
 
 
 // we consturct our ast by hand here.
+// this is what our ast shoudl look like when constructed. 
 func TestString(t *testing.T) {
     program := &Program {
         Statements: []Statement{
