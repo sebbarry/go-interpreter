@@ -10,10 +10,28 @@ import (
 	"interpreter/token"
 )
 
+
+const (
+    _ int = iota
+    /* 
+    _ int = iota means that the following declarations have a precedence value from 1-7
+    the order and the relation to each value have meaning ie. 1 + 1 is different than 1 * 1
+    the values allow us to ocmpare expressions and their precedence to each other.
+    */
+    LOWEST
+    EQUALS // ==
+    LESSGREATER // > or < 
+    SUM // +
+    PRODUCT // *
+    PREFIX // -X or !X
+    CALL  // myFunction(X)
+)
+
 type (
     prefixParseFn func() ast.Expression // gets called when we encounter a token in the prefix position. 
     infixParseFn func(ast.Expression) ast.Expression // gets called when we encounter a token in the infix position 
 )
+
 
 // main parser struct.
 type Parser struct {
@@ -41,7 +59,15 @@ func New(l *lexer.Lexer) *Parser {
     p.nextToken()
     p.nextToken()
 
+
+    p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+    p.registerPrefix(token.IDENT, p.parseIdentifier)
+
     return p
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+    return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 }
 
 // helper to advance curToken and peekToken
@@ -78,12 +104,34 @@ func (p *Parser) parseStatement() ast.Statement {
     case token.RETURN:
         return p.parseReturnStatement()
     default:
-        return nil
+        return p.parseExpressionStatement()
     }
 }
 
 
 // ************ Parser Handling Functions ************
+
+
+//expression statement handler
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+    stmt := &ast.ExpressionStatement{Token: p.curToken}
+    stmt.Expression = p.parseExpression(LOWEST)
+    if p.peekTokenIs(token.SEMICOLON) {
+        p.nextToken()
+    }
+    return stmt
+}
+
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+    prefix := p.prefixParseFns[p.curToken.Type]
+    if prefix == nil {
+        return nil
+    }
+    leftExp := prefix()
+    return leftExp
+}
+
 
 // let statement parser function
 func (p *Parser) parseLetStatement() *ast.LetStatement {
